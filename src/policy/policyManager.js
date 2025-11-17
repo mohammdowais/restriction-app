@@ -21,30 +21,36 @@ class PolicyManager {
    */
   async applyPolicy(policyType, settings) {
     try {
-      Logger.log(`Applying policy: ${policyType}`, settings);
+      Logger.debug(`Applying policy: ${policyType}`, settings, 'PolicyManager');
 
       // Verify administrator privileges before any policy modification
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation(`Apply ${policyType} policy`);
       if (!privilegeCheck.success) {
+        Logger.warn(`Privilege check failed for policy: ${policyType}`, privilegeCheck.error, 'PolicyManager');
         return privilegeCheck;
       }
 
       let result;
+      let action = 'apply';
 
       switch (policyType) {
         case 'drive':
+          action = settings.blockWriteAccess ? 'block' : 'allow';
           result = await this._applyDrivePolicy(settings);
           break;
 
         case 'browser':
+          action = settings.blockAllWebsites ? 'block' : 'unblock';
           result = await this._applyBrowserPolicy(settings);
           break;
 
         case 'whitelist':
+          action = settings.enabled ? 'enable' : 'disable';
           result = await this._applyWhitelistPolicy(settings);
           break;
 
         case 'domain':
+          action = settings.action;
           result = await this._applyDomainPolicy(settings);
           break;
 
@@ -60,15 +66,12 @@ class PolicyManager {
           };
       }
 
-      if (result.success) {
-        Logger.log(`Policy applied successfully: ${policyType}`);
-      } else {
-        Logger.error(`Failed to apply policy: ${policyType}`, result.error);
-      }
+      // Log policy change
+      Logger.logPolicyChange(policyType, action, result.success, result.error || result);
 
       return result;
     } catch (error) {
-      Logger.error(`Error applying policy: ${policyType}`, error);
+      Logger.error(`Error applying policy: ${policyType}`, error, 'PolicyManager');
       return {
         success: false,
         error: {
@@ -88,7 +91,7 @@ class PolicyManager {
    */
   async getCurrentPolicyStatus() {
     try {
-      Logger.log('Retrieving current policy status');
+      Logger.debug('Retrieving current policy status', null, 'PolicyManager');
 
       // Get drive policy status
       const driveStatus = await this.drivePolicy.getWriteAccessStatus();
@@ -116,10 +119,10 @@ class PolicyManager {
         }
       };
 
-      Logger.log('Policy status retrieved successfully', status);
+      Logger.debug('Policy status retrieved successfully', status, 'PolicyManager');
       return status;
     } catch (error) {
-      Logger.error('Error retrieving policy status', error);
+      Logger.error('Error retrieving policy status', error, 'PolicyManager');
       return {
         success: false,
         error: {

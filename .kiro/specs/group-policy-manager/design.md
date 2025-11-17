@@ -83,8 +83,9 @@ class AuthManager {
 **Responsibilities:**
 - Hash and verify passwords using bcrypt
 - Handle password changes
-- Manage security questions
+- Manage security questions and answers
 - Validate developer key
+- Provide security question setup interface
 
 **Key Methods:**
 ```javascript
@@ -93,6 +94,8 @@ class PasswordManager {
   async changePasswordWithSecurityQuestion(answer, newPassword)
   async changePasswordWithDeveloperKey(key, newPassword)
   async setSecurityQuestion(question, answer)
+  async getSecurityQuestion()
+  async hasSecurityQuestion()
   validatePasswordStrength(password)
 }
 ```
@@ -105,6 +108,8 @@ class PasswordManager {
 - Coordinate policy operations
 - Check administrator privileges
 - Handle policy application errors
+- Reset all policies to default state
+- Synchronize policy states on startup
 
 **Key Methods:**
 ```javascript
@@ -112,6 +117,8 @@ class PolicyManager {
   async checkAdminPrivileges()
   async applyPolicy(policyType, settings)
   async getCurrentPolicyStatus()
+  async resetAllPolicies()
+  async syncPolicyStates()
 }
 ```
 
@@ -138,8 +145,10 @@ class DrivePolicy {
 
 **Responsibilities:**
 - Block all websites across browsers
+- Block browser internal settings pages
 - Manage domain whitelist
 - Apply browser-specific policies
+- Track and report blocked/whitelisted domains
 
 **Implementation Approach:**
 - Use Windows Group Policy registry keys for each browser
@@ -147,17 +156,21 @@ class DrivePolicy {
 - Firefox: `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Mozilla\Firefox`
 - Edge: `HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge`
 - Apply URLBlocklist and URLAllowlist policies
+- Block internal pages: chrome://, edge://, about: URLs
 
 **Key Methods:**
 ```javascript
 class BrowserPolicy {
   async blockAllWebsites()
   async unblockAllWebsites()
+  async blockBrowserInternalPages()
+  async unblockBrowserInternalPages()
   async enableWhitelist(domains)
   async disableWhitelist()
   async addDomain(domain)
   async removeDomain(domain)
   async getDomainList()
+  async getBlockedDomains()
   validateDomain(domain)
 }
 ```
@@ -178,14 +191,22 @@ class BrowserPolicy {
     username: "admin",
     passwordHash: "bcrypt_hash",
     securityQuestion: "encrypted_question",
-    securityAnswerHash: "bcrypt_hash"
+    securityAnswerHash: "bcrypt_hash",
+    hasSecurityQuestion: false
   },
   developerKey: "encrypted_key",
   settings: {
     driveBlockEnabled: false,
     websiteBlockEnabled: false,
     whitelistEnabled: false,
-    whitelistedDomains: []
+    whitelistedDomains: [],
+    blockedDomains: []
+  },
+  toggleStates: {
+    driveBlock: false,
+    websiteBlock: false,
+    whitelist: false,
+    lastSynced: null
   }
 }
 ```
@@ -202,7 +223,42 @@ class DataStore {
 }
 ```
 
-### 4. UI Components
+### 4. Logging System
+
+#### Logger (`src/utils/logger.js`)
+
+**Responsibilities:**
+- Write log entries to file system
+- Manage log file rotation
+- Support different log levels (debug, info, warn, error)
+- Format log entries with timestamps and context
+- Separate development and production logging
+
+**Implementation Approach:**
+- Use Winston or similar logging library
+- Store logs in application data directory
+- Rotate logs when they exceed 10MB
+- Keep last 5 log files
+- Log format: `[timestamp] [level] [component] message`
+
+**Key Methods:**
+```javascript
+class Logger {
+  debug(message, context)
+  info(message, context)
+  warn(message, context)
+  error(message, error, context)
+  logAuthAttempt(username, success)
+  logPolicyChange(policyType, action, success)
+  logAppEvent(event, details)
+}
+```
+
+**Log Directory:**
+- Development: `./logs/`
+- Production: `%APPDATA%/group-policy-manager/logs/`
+
+### 5. UI Components
 
 #### Login Screen (`renderer/login.html`)
 
@@ -215,18 +271,22 @@ class DataStore {
 #### Main Application Screen (`renderer/index.html`)
 
 **Layout Sections:**
-1. **Header**: Application title, logout button
+1. **Header**: Application title, logout button, reset all policies button
 2. **External Drive Control Panel**:
    - Toggle switch for write access blocking
    - Status indicator
+   - Information text: "Read access remains enabled"
 3. **Website Control Panel**:
    - Toggle switch for blocking all websites
    - Toggle switch for whitelist mode
    - Domain management interface (add/remove domains)
-   - Domain list display
+   - Blocked domains list display (when block all is enabled)
+   - Whitelisted domains list display (when whitelist is enabled)
+   - Empty state messages for lists
 4. **Settings Panel**:
    - Change password button
-   - Security question management
+   - Security question setup/management button
+   - View logs button (optional)
 
 **Toggle Switch Component:**
 ```html
@@ -237,6 +297,56 @@ class DataStore {
     <span class="slider"></span>
   </label>
   <span class="status-indicator">Disabled</span>
+</div>
+```
+
+**Domain List Component:**
+```html
+<div class="domain-list-container">
+  <h3>Whitelisted Domains</h3>
+  <div class="domain-list" id="whitelistDisplay">
+    <div class="domain-item">
+      <span class="domain-name">example.com</span>
+      <button class="remove-btn" data-domain="example.com">Remove</button>
+    </div>
+    <!-- Empty state -->
+    <div class="empty-state" style="display: none;">
+      No domains in whitelist
+    </div>
+  </div>
+</div>
+```
+
+**Reset Confirmation Modal:**
+```html
+<div class="modal" id="resetModal">
+  <div class="modal-content">
+    <h2>Reset All Policies</h2>
+    <p>This will disable all group policies and restore default settings. Are you sure?</p>
+    <div class="modal-actions">
+      <button class="btn-cancel">Cancel</button>
+      <button class="btn-confirm">Reset All</button>
+    </div>
+  </div>
+</div>
+```
+
+**Security Question Setup Modal:**
+```html
+<div class="modal" id="securityQuestionModal">
+  <div class="modal-content">
+    <h2>Setup Security Question</h2>
+    <form id="securityQuestionForm">
+      <label>Security Question:</label>
+      <input type="text" id="securityQuestion" placeholder="What is your favorite color?" required>
+      <label>Answer:</label>
+      <input type="text" id="securityAnswer" required>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel">Cancel</button>
+        <button type="submit" class="btn-confirm">Save</button>
+      </div>
+    </form>
+  </div>
 </div>
 ```
 
@@ -261,7 +371,18 @@ class DataStore {
   websiteBlockEnabled: Boolean,
   whitelistEnabled: Boolean,
   whitelistedDomains: Array<String>,
+  blockedDomains: Array<String>,
   lastUpdated: Date
+}
+```
+
+### Toggle States Model
+```javascript
+{
+  driveBlock: Boolean,
+  websiteBlock: Boolean,
+  whitelist: Boolean,
+  lastSynced: Date
 }
 ```
 
@@ -271,7 +392,9 @@ class DataStore {
   driveWriteBlocked: Boolean,
   allWebsitesBlocked: Boolean,
   whitelistActive: Boolean,
-  activeDomains: Array<String>
+  activeDomains: Array<String>,
+  blockedDomains: Array<String>,
+  internalPagesBlocked: Boolean
 }
 ```
 
@@ -409,6 +532,110 @@ const developerKey = crypto.randomBytes(32).toString('hex');
 ```
 
 Store this key securely and provide it to the developer for recovery purposes.
+
+### Toggle State Persistence
+
+**Implementation Strategy:**
+1. Save toggle states to DataStore whenever they change
+2. On application startup:
+   - Load saved toggle states from DataStore
+   - Query actual Group Policy registry settings
+   - Synchronize UI with actual policy state
+   - Update DataStore if discrepancies found
+
+**Synchronization Logic:**
+```javascript
+async function syncToggleStates() {
+  const savedStates = await dataStore.getToggleStates();
+  const actualStates = await policyManager.getCurrentPolicyStatus();
+  
+  // Update UI to match actual policy state
+  updateToggleUI('driveBlock', actualStates.driveWriteBlocked);
+  updateToggleUI('websiteBlock', actualStates.allWebsitesBlocked);
+  updateToggleUI('whitelist', actualStates.whitelistActive);
+  
+  // Save synchronized state
+  await dataStore.updateToggleStates({
+    driveBlock: actualStates.driveWriteBlocked,
+    websiteBlock: actualStates.allWebsitesBlocked,
+    whitelist: actualStates.whitelistActive,
+    lastSynced: new Date()
+  });
+}
+```
+
+### Browser Internal Pages Blocking
+
+**Chrome Internal Pages:**
+```
+chrome://settings
+chrome://flags
+chrome://extensions
+chrome://apps
+chrome://history
+chrome://downloads
+```
+
+**Edge Internal Pages:**
+```
+edge://settings
+edge://flags
+edge://extensions
+edge://apps
+edge://history
+edge://downloads
+```
+
+**Firefox Internal Pages:**
+```
+about:config
+about:preferences
+about:addons
+about:support
+```
+
+**Registry Implementation:**
+Add these URLs to the URLBlocklist when website blocking is enabled:
+```
+HKLM\SOFTWARE\Policies\Google\Chrome\URLBlocklist
+  1 = "chrome://*"
+  
+HKLM\SOFTWARE\Policies\Microsoft\Edge\URLBlocklist
+  1 = "edge://*"
+  
+HKLM\SOFTWARE\Policies\Mozilla\Firefox\WebsiteFilter\Block
+  1 = "about:*"
+```
+
+### Reset All Policies Implementation
+
+**Reset Process:**
+1. Show confirmation modal
+2. If confirmed:
+   - Call `drivePolicy.allowWriteAccess()`
+   - Call `browserPolicy.unblockAllWebsites()`
+   - Call `browserPolicy.disableWhitelist()`
+   - Clear whitelistedDomains and blockedDomains arrays
+   - Set all toggle states to false
+   - Save updated settings to DataStore
+   - Update UI to reflect changes
+   - Show success message
+
+### Logging Implementation
+
+**Log Entry Format:**
+```
+[2024-11-17 14:30:45] [INFO] [AuthManager] User 'admin' logged in successfully
+[2024-11-17 14:31:12] [INFO] [DrivePolicy] External drive write access blocked
+[2024-11-17 14:31:45] [ERROR] [BrowserPolicy] Failed to apply policy: Access denied
+[2024-11-17 14:32:00] [INFO] [PolicyManager] All policies reset to default
+```
+
+**Log Rotation:**
+- Max file size: 10MB
+- Max files: 5
+- Naming: `app-YYYY-MM-DD.log`
+- Archived logs: `app-YYYY-MM-DD.1.log`, etc.
 
 ## UI Design Principles
 

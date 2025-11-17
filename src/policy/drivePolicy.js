@@ -20,11 +20,12 @@ class DrivePolicy {
    */
   async blockWriteAccess() {
     try {
-      Logger.log('Attempting to block external drive write access');
+      Logger.info('Attempting to block external drive write access', null, 'DrivePolicy');
 
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Block External Drive Write Access');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for blocking drive write access', privilegeCheck.error, 'DrivePolicy');
         return privilegeCheck;
       }
 
@@ -37,7 +38,7 @@ class DrivePolicy {
 
       await execAsync(command, { shell: 'powershell.exe' });
 
-      Logger.log('External drive write access blocked successfully');
+      Logger.info('External drive write access blocked successfully', null, 'DrivePolicy');
       
       return {
         success: true,
@@ -55,11 +56,12 @@ class DrivePolicy {
    */
   async allowWriteAccess() {
     try {
-      Logger.log('Attempting to allow external drive write access');
+      Logger.info('Attempting to allow external drive write access', null, 'DrivePolicy');
 
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Allow External Drive Write Access');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for allowing drive write access', privilegeCheck.error, 'DrivePolicy');
         return privilegeCheck;
       }
 
@@ -72,7 +74,7 @@ class DrivePolicy {
 
       await execAsync(command, { shell: 'powershell.exe' });
 
-      Logger.log('External drive write access allowed successfully');
+      Logger.info('External drive write access allowed successfully', null, 'DrivePolicy');
       
       return {
         success: true,
@@ -90,7 +92,7 @@ class DrivePolicy {
    */
   async getWriteAccessStatus() {
     try {
-      Logger.log('Checking external drive write access status');
+      Logger.debug('Checking external drive write access status', null, 'DrivePolicy');
 
       // Read the WriteProtect value from registry
       const command = `powershell -Command "` +
@@ -119,7 +121,7 @@ class DrivePolicy {
         isBlocked = false;
       }
 
-      Logger.log(`External drive write access status: ${status}`);
+      Logger.debug(`External drive write access status: ${status}`, { value, isBlocked }, 'DrivePolicy');
 
       return {
         success: true,
@@ -140,7 +142,7 @@ class DrivePolicy {
    * @returns {Object} Structured error response
    */
   _handleRegistryError(error, operation) {
-    Logger.error(`Failed to ${operation}`, error);
+    Logger.error(`Failed to ${operation}`, error, 'DrivePolicy');
 
     const errorMessage = error.message || error.toString();
     const errorLower = errorMessage.toLowerCase();

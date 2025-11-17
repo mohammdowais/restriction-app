@@ -28,11 +28,12 @@ class BrowserPolicy {
    */
   async blockAllWebsites() {
     try {
-      Logger.log('Attempting to block all websites across all browsers');
+      Logger.info('Attempting to block all websites across all browsers', null, 'BrowserPolicy');
 
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Block All Websites');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for blocking websites', privilegeCheck.error, 'BrowserPolicy');
         return privilegeCheck;
       }
 
@@ -56,9 +57,9 @@ class BrowserPolicy {
 
           await execAsync(command, { shell: 'powershell.exe' });
           results.push({ browser, success: true });
-          Logger.log(`Blocked all websites for ${browser}`);
+          Logger.debug(`Blocked all websites for ${browser}`, null, 'BrowserPolicy');
         } catch (error) {
-          Logger.error(`Failed to block websites for ${browser}`, error);
+          Logger.error(`Failed to block websites for ${browser}`, error, 'BrowserPolicy');
           results.push({ browser, success: false, error: error.message });
         }
       }
@@ -66,6 +67,12 @@ class BrowserPolicy {
       // Check if all browsers were successfully configured
       const allSuccess = results.every(r => r.success);
       const successCount = results.filter(r => r.success).length;
+
+      if (allSuccess) {
+        Logger.info('All websites blocked successfully across all browsers', { results }, 'BrowserPolicy');
+      } else {
+        Logger.warn(`Websites blocked for ${successCount} of ${results.length} browsers`, { results }, 'BrowserPolicy');
+      }
 
       return {
         success: allSuccess,
@@ -86,11 +93,12 @@ class BrowserPolicy {
    */
   async unblockAllWebsites() {
     try {
-      Logger.log('Attempting to unblock all websites across all browsers');
+      Logger.info('Attempting to unblock all websites across all browsers', null, 'BrowserPolicy');
 
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Unblock All Websites');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for unblocking websites', privilegeCheck.error, 'BrowserPolicy');
         return privilegeCheck;
       }
 
@@ -109,15 +117,21 @@ class BrowserPolicy {
 
           await execAsync(command, { shell: 'powershell.exe' });
           results.push({ browser, success: true });
-          Logger.log(`Unblocked websites for ${browser}`);
+          Logger.debug(`Unblocked websites for ${browser}`, null, 'BrowserPolicy');
         } catch (error) {
-          Logger.error(`Failed to unblock websites for ${browser}`, error);
+          Logger.error(`Failed to unblock websites for ${browser}`, error, 'BrowserPolicy');
           results.push({ browser, success: false, error: error.message });
         }
       }
 
       const allSuccess = results.every(r => r.success);
       const successCount = results.filter(r => r.success).length;
+
+      if (allSuccess) {
+        Logger.info('All websites unblocked successfully across all browsers', { results }, 'BrowserPolicy');
+      } else {
+        Logger.warn(`Websites unblocked for ${successCount} of ${results.length} browsers`, { results }, 'BrowserPolicy');
+      }
 
       return {
         success: allSuccess,
@@ -139,17 +153,19 @@ class BrowserPolicy {
    */
   async enableWhitelist(domains) {
     try {
-      Logger.log('Attempting to enable domain whitelist');
+      Logger.info('Attempting to enable domain whitelist', { domainCount: domains.length }, 'BrowserPolicy');
 
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Enable Domain Whitelist');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for enabling whitelist', privilegeCheck.error, 'BrowserPolicy');
         return privilegeCheck;
       }
 
       // Validate all domains
       const invalidDomains = domains.filter(domain => !this.validateDomain(domain));
       if (invalidDomains.length > 0) {
+        Logger.warn('Invalid domains detected', { invalidDomains }, 'BrowserPolicy');
         return {
           success: false,
           error: {
@@ -200,15 +216,21 @@ class BrowserPolicy {
           }
 
           results.push({ browser, success: true, domainCount: domains.length });
-          Logger.log(`Enabled whitelist for ${browser} with ${domains.length} domains`);
+          Logger.debug(`Enabled whitelist for ${browser} with ${domains.length} domains`, null, 'BrowserPolicy');
         } catch (error) {
-          Logger.error(`Failed to enable whitelist for ${browser}`, error);
+          Logger.error(`Failed to enable whitelist for ${browser}`, error, 'BrowserPolicy');
           results.push({ browser, success: false, error: error.message });
         }
       }
 
       const allSuccess = results.every(r => r.success);
       const successCount = results.filter(r => r.success).length;
+
+      if (allSuccess) {
+        Logger.info(`Domain whitelist enabled successfully with ${domains.length} domains`, { results }, 'BrowserPolicy');
+      } else {
+        Logger.warn(`Whitelist enabled for ${successCount} of ${results.length} browsers`, { results }, 'BrowserPolicy');
+      }
 
       return {
         success: allSuccess,
@@ -230,11 +252,12 @@ class BrowserPolicy {
    */
   async disableWhitelist() {
     try {
-      Logger.log('Attempting to disable domain whitelist');
+      Logger.info('Attempting to disable domain whitelist', null, 'BrowserPolicy');
 
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Disable Domain Whitelist');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for disabling whitelist', privilegeCheck.error, 'BrowserPolicy');
         return privilegeCheck;
       }
 
@@ -257,15 +280,21 @@ class BrowserPolicy {
 
           await execAsync(command, { shell: 'powershell.exe' });
           results.push({ browser, success: true });
-          Logger.log(`Disabled whitelist for ${browser}`);
+          Logger.debug(`Disabled whitelist for ${browser}`, null, 'BrowserPolicy');
         } catch (error) {
-          Logger.error(`Failed to disable whitelist for ${browser}`, error);
+          Logger.error(`Failed to disable whitelist for ${browser}`, error, 'BrowserPolicy');
           results.push({ browser, success: false, error: error.message });
         }
       }
 
       const allSuccess = results.every(r => r.success);
       const successCount = results.filter(r => r.success).length;
+
+      if (allSuccess) {
+        Logger.info('Domain whitelist disabled successfully', { results }, 'BrowserPolicy');
+      } else {
+        Logger.warn(`Whitelist disabled for ${successCount} of ${results.length} browsers`, { results }, 'BrowserPolicy');
+      }
 
       return {
         success: allSuccess,
@@ -287,10 +316,11 @@ class BrowserPolicy {
    */
   async addDomain(domain) {
     try {
-      Logger.log(`Attempting to add domain to whitelist: ${domain}`);
+      Logger.info(`Attempting to add domain to whitelist: ${domain}`, null, 'BrowserPolicy');
 
       // Validate domain format
       if (!this.validateDomain(domain)) {
+        Logger.warn(`Invalid domain format: ${domain}`, null, 'BrowserPolicy');
         return {
           success: false,
           error: {
@@ -305,6 +335,7 @@ class BrowserPolicy {
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Add Domain to Whitelist');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for adding domain', privilegeCheck.error, 'BrowserPolicy');
         return privilegeCheck;
       }
 
@@ -316,6 +347,7 @@ class BrowserPolicy {
 
       // Check if domain already exists
       if (currentDomains.domains.includes(domain)) {
+        Logger.debug(`Domain already exists in whitelist: ${domain}`, null, 'BrowserPolicy');
         return {
           success: true,
           message: `Domain "${domain}" is already in the whitelist`,
@@ -325,6 +357,8 @@ class BrowserPolicy {
 
       // Add domain to the list
       const updatedDomains = [...currentDomains.domains, domain];
+      
+      Logger.info(`Adding domain to whitelist: ${domain}`, { totalDomains: updatedDomains.length }, 'BrowserPolicy');
       
       // Re-enable whitelist with updated domain list
       return await this.enableWhitelist(updatedDomains);
@@ -340,11 +374,12 @@ class BrowserPolicy {
    */
   async removeDomain(domain) {
     try {
-      Logger.log(`Attempting to remove domain from whitelist: ${domain}`);
+      Logger.info(`Attempting to remove domain from whitelist: ${domain}`, null, 'BrowserPolicy');
 
       // Verify administrator privileges
       const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Remove Domain from Whitelist');
       if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for removing domain', privilegeCheck.error, 'BrowserPolicy');
         return privilegeCheck;
       }
 
@@ -356,6 +391,7 @@ class BrowserPolicy {
 
       // Check if domain exists
       if (!currentDomains.domains.includes(domain)) {
+        Logger.debug(`Domain not found in whitelist: ${domain}`, null, 'BrowserPolicy');
         return {
           success: true,
           message: `Domain "${domain}" is not in the whitelist`,
@@ -366,8 +402,11 @@ class BrowserPolicy {
       // Remove domain from the list
       const updatedDomains = currentDomains.domains.filter(d => d !== domain);
       
+      Logger.info(`Removing domain from whitelist: ${domain}`, { remainingDomains: updatedDomains.length }, 'BrowserPolicy');
+      
       // If no domains left, disable whitelist
       if (updatedDomains.length === 0) {
+        Logger.info('No domains remaining, disabling whitelist', null, 'BrowserPolicy');
         return await this.disableWhitelist();
       }
 
@@ -384,7 +423,7 @@ class BrowserPolicy {
    */
   async getDomainList() {
     try {
-      Logger.log('Retrieving domain whitelist');
+      Logger.debug('Retrieving domain whitelist', null, 'BrowserPolicy');
 
       // Read domains from Chrome registry (use as source of truth)
       const allowlistPath = `${this.browserPaths.chrome}\\URLAllowlist`;
@@ -405,7 +444,7 @@ class BrowserPolicy {
         .map(d => d.trim())
         .filter(d => d.length > 0);
 
-      Logger.log(`Retrieved ${domains.length} domains from whitelist`);
+      Logger.debug(`Retrieved ${domains.length} domains from whitelist`, { domains }, 'BrowserPolicy');
 
       return {
         success: true,
@@ -414,7 +453,7 @@ class BrowserPolicy {
       };
     } catch (error) {
       // If error reading, return empty list (whitelist not configured)
-      Logger.log('No whitelist configured or error reading domains');
+      Logger.debug('No whitelist configured or error reading domains', null, 'BrowserPolicy');
       return {
         success: true,
         domains: [],
@@ -448,7 +487,7 @@ class BrowserPolicy {
    * @returns {Object} Structured error response
    */
   _handlePolicyError(error, operation) {
-    Logger.error(`Failed to ${operation}`, error);
+    Logger.error(`Failed to ${operation}`, error, 'BrowserPolicy');
 
     const errorMessage = error.message || error.toString();
     const errorLower = errorMessage.toLowerCase();

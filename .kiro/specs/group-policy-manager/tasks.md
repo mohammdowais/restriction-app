@@ -23,18 +23,19 @@
     - Implement AES-256 encryption using Node.js crypto module
     - Create methods for loading and saving encrypted JSON data
     - Generate machine-specific encryption key
-    - _Requirements: 5.8_
+    - _Requirements: 5.9_
   - [x] 2.2 Implement data models for credentials and settings
 
 
     - Define User Credentials Model structure
     - Define Application Settings Model structure
+    - Add Toggle States Model for persistence
     - Create default data initialization with admin/admin credentials
-    - _Requirements: 4.2, 5.8_
+    - _Requirements: 4.2, 5.10, 8.1_
   - [ ]* 2.3 Write unit tests for DataStore encryption and persistence
     - Test encryption/decryption functionality
     - Test data loading and saving operations
-    - _Requirements: 5.8_
+    - _Requirements: 5.10_
 
 - [x] 3. Build authentication system
 
@@ -55,13 +56,16 @@
     - Implement changePasswordWithOld method
     - Implement changePasswordWithSecurityQuestion method
     - Implement changePasswordWithDeveloperKey method
+    - Implement setSecurityQuestion and getSecurityQuestion methods
+    - Implement hasSecurityQuestion check
     - Implement password strength validation
     - Generate and store encrypted developer key
-    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8_
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10_
   - [ ]* 3.3 Write unit tests for authentication logic
     - Test password hashing and verification
     - Test authentication success and failure scenarios
     - Test password change methods
+    - Test security question setup and retrieval
     - _Requirements: 4.2, 4.4, 5.2, 5.4, 5.6_
 
 - [x] 4. Implement privilege checking utility
@@ -85,17 +89,17 @@
   - [x] 5.1 Create DrivePolicy class
 
 
-    - Implement blockWriteAccess method to modify registry WriteProtect key
+    - Implement blockWriteAccess method to modify registry WriteProtect key (blocks write, allows read)
     - Implement allowWriteAccess method to restore registry settings
     - Implement getWriteAccessStatus method to read current policy state
     - Use child_process to execute PowerShell registry commands
-    - _Requirements: 1.1, 1.2, 1.3, 1.4_
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   - [x] 5.2 Add error handling for registry operations
 
     - Handle insufficient privileges errors
     - Handle registry access denied errors
     - Return structured error responses
-    - _Requirements: 1.5, 7.3_
+    - _Requirements: 1.6, 11.3_
 
 - [x] 6. Build browser and website policy management
 
@@ -109,7 +113,7 @@
     - Implement blockAllWebsites method for Chrome, Edge, Firefox registry keys
     - Implement unblockAllWebsites method to remove blocking policies
     - Implement domain validation using regex
-    - _Requirements: 2.1, 2.2, 2.3, 2.5, 3.6_
+    - _Requirements: 2.1, 2.2, 2.3, 2.5, 3.7_
 
   - [x] 6.2 Implement domain whitelist functionality
 
@@ -117,17 +121,24 @@
     - Implement enableWhitelist method to apply URLAllowlist policies
     - Implement disableWhitelist method to remove whitelist policies
     - Implement addDomain and removeDomain methods
-    - Implement getDomainList method
+    - Implement getDomainList method to retrieve whitelisted domains
+    - Implement getBlockedDomains method to retrieve blocked domains
 
-    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
-  - [x] 6.3 Add error handling for browser policy operations
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 7.1, 7.2_
+  - [x] 6.3 Implement browser internal pages blocking
+
+
+    - Add blockBrowserInternalPages method to block chrome://, edge://, about: URLs
+    - Add unblockBrowserInternalPages method to restore access
+    - Apply blocking when website blocking is enabled
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
+  - [x] 6.4 Add error handling for browser policy operations
 
 
     - Handle registry modification failures
     - Handle invalid domain format errors
     - Return structured error responses
-    - _Requirements: 2.5, 3.6_
--
+    - _Requirements: 2.5, 3.7_
 
 - [x] 7. Create PolicyManager orchestration layer
 
@@ -138,8 +149,35 @@
 
     - Create applyPolicy method that coordinates DrivePolicy and BrowserPolicy
     - Implement getCurrentPolicyStatus method
+    - Implement resetAllPolicies method to restore default state
+    - Implement syncPolicyStates method to synchronize on startup
     - Integrate PrivilegeChecker before policy modifications
-    - _Requirements: 7.2, 7.4_
+    - _Requirements: 11.2, 11.4, 8.4, 9.3, 9.4, 9.5, 9.6_
+
+- [x] 7.5 Implement comprehensive logging system
+
+
+
+
+
+
+
+  - [x] 7.5.1 Create Logger utility class
+
+    - Install and configure Winston logging library
+    - Implement log methods (debug, info, warn, error)
+    - Configure log file rotation (10MB max, 5 files)
+    - Set up different log levels for dev and production
+    - Create log directory in appropriate location
+
+    - _Requirements: 10.1, 10.6, 10.7, 10.8, 10.9_
+  - [x] 7.5.2 Integrate logging throughout application
+
+    - Add authentication attempt logging to AuthManager
+    - Add policy change logging to PolicyManager, DrivePolicy, BrowserPolicy
+    - Add error logging with stack traces
+    - Add application startup and shutdown logging
+    - _Requirements: 10.2, 10.3, 10.4, 10.5_
 
 - [x] 8. Build IPC communication layer
 
@@ -151,18 +189,21 @@
   - [x] 8.1 Create preload.js with secure API exposure
 
     - Expose authentication methods (login, logout, changePassword)
-    - Expose policy methods (toggleDriveBlock, toggleWebsiteBlock, manageDomains)
-    - Expose settings methods (getStatus, updateSettings)
+    - Expose policy methods (toggleDriveBlock, toggleWebsiteBlock, manageDomains, resetAllPolicies)
+    - Expose settings methods (getStatus, updateSettings, setupSecurityQuestion)
+    - Expose domain list retrieval methods (getWhitelistedDomains, getBlockedDomains)
     - Implement IPC message validation
-    - _Requirements: 4.1, 1.1, 2.1, 3.1_
+    - _Requirements: 4.1, 1.1, 2.1, 3.1, 5.1, 7.1, 7.2, 9.1_
 
   - [x] 8.2 Implement IPC handlers in main.js
 
     - Handle authentication requests
     - Handle policy modification requests
-    - Handle data retrieval requests
+    - Handle reset all policies requests
+    - Handle security question setup requests
+    - Handle data retrieval requests (including domain lists)
     - Return success/error responses to renderer
-    - _Requirements: 4.3, 4.4, 1.5, 2.5_
+    - _Requirements: 4.3, 4.4, 1.6, 2.5, 5.1, 7.3, 9.2_
 
 - [x] 9. Create login screen UI
 
@@ -189,9 +230,10 @@
 
 
     - Build UI for three recovery methods (old password, security question, developer key)
+    - Display configured security question when using that method
     - Implement form validation
     - Call IPC password change methods
-    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
+    - _Requirements: 5.3, 5.4, 5.5, 5.6, 5.7, 5.8_
 
 - [x] 10. Create main application UI
 
@@ -201,11 +243,11 @@
   - [x] 10.1 Build index.html structure
 
 
-    - Create header with title and logout button
-    - Create external drive control panel section
+    - Create header with title, logout button, and reset all policies button
+    - Create external drive control panel section with read-access info text
     - Create website control panel section
-    - Create settings panel section
-    - _Requirements: 6.1, 6.5_
+    - Create settings panel section with security question setup button
+    - _Requirements: 6.1, 6.5, 9.1_
 
   - [x] 10.2 Implement toggle switch components
 
@@ -220,9 +262,24 @@
 
     - Create input field for adding domains
     - Create add/remove buttons
-    - Create domain list display with delete buttons
+    - Create whitelisted domains list display with remove buttons
+    - Create blocked domains list display (read-only)
+    - Add empty state messages for both lists
     - Implement domain validation in UI
-    - _Requirements: 3.2, 3.3, 3.6_
+    - _Requirements: 3.2, 3.3, 3.4, 3.7, 7.1, 7.2, 7.3, 7.4, 7.5_
+  
+  - [ ] 10.4 Create reset confirmation modal
+    - Build modal with warning message
+    - Add cancel and confirm buttons
+    - Implement modal show/hide logic
+    - _Requirements: 9.1, 9.2_
+  
+  - [ ] 10.5 Create security question setup modal
+    - Build modal with question and answer input fields
+    - Add form validation
+    - Add cancel and save buttons
+    - Implement modal show/hide logic
+    - _Requirements: 5.1, 5.2_
 
 - [x] 11. Implement main application renderer logic
 
@@ -236,14 +293,17 @@
     - Implement toggle switch change handlers
     - Call IPC methods for policy changes (toggleDriveBlock, toggleWebsiteBlock, toggleWhitelist)
     - Update UI status indicators based on responses
-    - _Requirements: 1.2, 1.3, 2.2, 2.3, 3.4, 3.5, 6.3_
+    - Save toggle states to DataStore on change
+    - _Requirements: 1.2, 1.4, 2.2, 2.3, 3.5, 3.6, 6.3, 8.1_
   - [x] 11.2 Implement domain management logic
 
     - Handle add domain button click
     - Handle remove domain button click
-    - Update domain list display
+    - Update whitelisted domains list display
+    - Update blocked domains list display
+    - Show/hide empty state messages
     - Show validation errors for invalid domains
-    - _Requirements: 3.2, 3.3, 3.6_
+    - _Requirements: 3.2, 3.3, 3.4, 3.7, 7.2, 7.3_
 
   - [x] 11.3 Implement settings and logout functionality
 
@@ -253,8 +313,40 @@
 
     - Handle logout button click
     - Handle change password button click
+    - Handle security question setup button click
     - Load and display current policy status on page load
-    - _Requirements: 4.5, 5.1, 1.4, 2.4_
+    - _Requirements: 4.5, 5.1, 5.3, 1.5, 2.4_
+  
+  - [ ] 11.4 Implement toggle state persistence and synchronization
+    - Load saved toggle states from DataStore on app startup
+    - Call syncPolicyStates to verify actual policy status
+    - Update toggle UI to match synchronized state
+    - Display status indicators correctly on load
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+  
+  - [ ] 11.5 Implement reset all policies functionality
+    - Handle reset button click
+    - Show reset confirmation modal
+    - Call IPC resetAllPolicies method on confirmation
+    - Update all toggles to disabled state
+    - Clear domain lists
+    - Show success message
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
+  
+  - [ ] 11.6 Implement security question setup
+    - Handle security question setup button click
+    - Show security question modal
+    - Validate form inputs
+    - Call IPC setupSecurityQuestion method
+    - Show success/error messages
+    - _Requirements: 5.1, 5.2_
+  
+  - [ ] 11.7 Implement domain list display updates
+    - Fetch and display whitelisted domains on load
+    - Fetch and display blocked domains when website blocking is enabled
+    - Update lists in real-time when domains are added/removed
+    - Show appropriate empty state messages
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
 - [x] 12. Style the application with modern CSS
 
@@ -297,20 +389,25 @@
 
   - [x] 13.2 Initialize application services
 
+    - Initialize Logger and log application startup
     - Initialize DataStore and load existing data
     - Initialize AuthManager, PasswordManager, PolicyManager
     - Check for admin privileges on startup
     - Display privilege warning if needed
+    - Call syncPolicyStates to synchronize toggle states with actual policies
 
-    - _Requirements: 7.1, 7.2_
+    - _Requirements: 10.5, 11.1, 11.2, 8.4_
 
   - [x] 13.3 Register all IPC handlers
 
     - Register authentication handlers
     - Register policy modification handlers
+    - Register reset all policies handler
+    - Register security question setup handler
+    - Register domain list retrieval handlers
     - Register settings handlers
-    - Implement error handling for all handlers
-    - _Requirements: 4.3, 1.5, 2.5_
+    - Implement error handling and logging for all handlers
+    - _Requirements: 4.3, 1.6, 2.5, 9.2, 5.1, 7.3, 10.4_
 
 - [x] 14. Add error handling and user feedback
 

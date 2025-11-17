@@ -20,7 +20,7 @@ let policyManager;
  */
 async function initializeServices() {
   try {
-    Logger.log('Initializing application services...');
+    Logger.info('Initializing application services...', null, 'Application');
     
     // Initialize data store and load data
     dataStore = new DataStore();
@@ -31,13 +31,13 @@ async function initializeServices() {
     passwordManager = new PasswordManager(dataStore);
     policyManager = new PolicyManager();
     
-    Logger.log('Application services initialized successfully');
+    Logger.info('Application services initialized successfully', null, 'Application');
     
     // Check for admin privileges on startup
     const privilegeCheck = await PrivilegeChecker.checkAdminPrivileges();
     if (!privilegeCheck.hasPrivileges) {
-      Logger.warn('Application is not running with administrator privileges');
-      Logger.warn('Some features may not work correctly');
+      Logger.warn('Application is not running with administrator privileges', null, 'Application');
+      Logger.warn('Some features may not work correctly', null, 'Application');
       
       // Display privilege warning to user
       const { dialog } = require('electron');
@@ -53,10 +53,10 @@ async function initializeServices() {
         }
       }, 1000); // Delay to ensure window is created
     } else {
-      Logger.log('Application is running with administrator privileges');
+      Logger.info('Application is running with administrator privileges', null, 'Application');
     }
   } catch (error) {
-    Logger.error('Failed to initialize application services', error);
+    Logger.error('Failed to initialize application services', error, 'Application');
     throw error;
   }
 }
@@ -65,7 +65,7 @@ async function initializeServices() {
  * Register all IPC handlers for communication with renderer process
  */
 function registerIpcHandlers() {
-  Logger.log('Registering IPC handlers...');
+  Logger.debug('Registering IPC handlers...', null, 'Application');
   
   // ===== Authentication Handlers =====
   
@@ -74,18 +74,10 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('auth:login', async (event, username, password) => {
     try {
-      Logger.log(`Login attempt for user: ${username}`);
       const result = await authManager.authenticate(username, password);
-      
-      if (result.success) {
-        Logger.log(`Login successful for user: ${username}`);
-      } else {
-        Logger.log(`Login failed for user: ${username}`);
-      }
-      
       return result;
     } catch (error) {
-      Logger.error('Login error', error);
+      Logger.error('Login error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -103,16 +95,10 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('auth:logout', async (event) => {
     try {
-      Logger.log('Logout request received');
       const result = await authManager.logout();
-      
-      if (result.success) {
-        Logger.log('Logout successful');
-      }
-      
       return result;
     } catch (error) {
-      Logger.error('Logout error', error);
+      Logger.error('Logout error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -130,7 +116,7 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('auth:changePassword', async (event, method, data) => {
     try {
-      Logger.log(`Password change request using method: ${method}`);
+      Logger.debug(`Password change request using method: ${method}`, null, 'IPC');
       
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
@@ -170,14 +156,14 @@ function registerIpcHandlers() {
       }
       
       if (result.success) {
-        Logger.log(`Password changed successfully using method: ${method}`);
+        Logger.info(`Password changed successfully using method: ${method}`, null, 'IPC');
       } else {
-        Logger.log(`Password change failed using method: ${method}`);
+        Logger.warn(`Password change failed using method: ${method}`, result.error, 'IPC');
       }
       
       return result;
     } catch (error) {
-      Logger.error('Password change error', error);
+      Logger.error('Password change error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -195,7 +181,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('auth:getSecurityQuestion', async (event) => {
     try {
-      Logger.log('Get security question request received');
       const question = await passwordManager.getSecurityQuestion();
       
       return {
@@ -203,7 +188,7 @@ function registerIpcHandlers() {
         question: question
       };
     } catch (error) {
-      Logger.error('Get security question error', error);
+      Logger.error('Get security question error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -223,8 +208,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('policy:toggleDriveBlock', async (event, enabled) => {
     try {
-      Logger.log(`Toggle drive block request: ${enabled}`);
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -251,7 +234,7 @@ function registerIpcHandlers() {
       
       return result;
     } catch (error) {
-      Logger.error('Toggle drive block error', error);
+      Logger.error('Toggle drive block error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -269,8 +252,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('policy:toggleWebsiteBlock', async (event, enabled) => {
     try {
-      Logger.log(`Toggle website block request: ${enabled}`);
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -297,7 +278,7 @@ function registerIpcHandlers() {
       
       return result;
     } catch (error) {
-      Logger.error('Toggle website block error', error);
+      Logger.error('Toggle website block error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -315,8 +296,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('policy:toggleWhitelist', async (event, enabled) => {
     try {
-      Logger.log(`Toggle whitelist request: ${enabled}`);
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -348,7 +327,7 @@ function registerIpcHandlers() {
       
       return result;
     } catch (error) {
-      Logger.error('Toggle whitelist error', error);
+      Logger.error('Toggle whitelist error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -366,8 +345,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('policy:addDomain', async (event, domain) => {
     try {
-      Logger.log(`Add domain request: ${domain}`);
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -401,7 +378,7 @@ function registerIpcHandlers() {
       
       return result;
     } catch (error) {
-      Logger.error('Add domain error', error);
+      Logger.error('Add domain error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -419,8 +396,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('policy:removeDomain', async (event, domain) => {
     try {
-      Logger.log(`Remove domain request: ${domain}`);
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -452,7 +427,7 @@ function registerIpcHandlers() {
       
       return result;
     } catch (error) {
-      Logger.error('Remove domain error', error);
+      Logger.error('Remove domain error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -470,8 +445,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('policy:getDomains', async (event) => {
     try {
-      Logger.log('Get domains request received');
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -493,7 +466,7 @@ function registerIpcHandlers() {
         count: (settings.whitelistedDomains || []).length
       };
     } catch (error) {
-      Logger.error('Get domains error', error);
+      Logger.error('Get domains error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -513,8 +486,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('settings:getStatus', async (event) => {
     try {
-      Logger.log('Get status request received');
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -545,7 +516,7 @@ function registerIpcHandlers() {
         }
       };
     } catch (error) {
-      Logger.error('Get status error', error);
+      Logger.error('Get status error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -563,8 +534,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('settings:updateSettings', async (event, settings) => {
     try {
-      Logger.log('Update settings request received', settings);
-      
       // Check if user is authenticated
       if (!authManager.isAuthenticated()) {
         return {
@@ -579,13 +548,14 @@ function registerIpcHandlers() {
       }
       
       await dataStore.updateSettings(settings);
+      Logger.info('Settings updated successfully', settings, 'IPC');
       
       return {
         success: true,
         message: 'Settings updated successfully'
       };
     } catch (error) {
-      Logger.error('Update settings error', error);
+      Logger.error('Update settings error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -605,8 +575,6 @@ function registerIpcHandlers() {
    */
   ipcMain.handle('navigation:loadMainApp', async (event) => {
     try {
-      Logger.log('Load main app request received');
-      
       if (!authManager.isAuthenticated()) {
         return {
           success: false,
@@ -621,6 +589,7 @@ function registerIpcHandlers() {
       
       if (mainWindow) {
         mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+        Logger.info('Main application loaded', null, 'IPC');
       }
       
       return {
@@ -628,7 +597,7 @@ function registerIpcHandlers() {
         message: 'Main application loaded'
       };
     } catch (error) {
-      Logger.error('Load main app error', error);
+      Logger.error('Load main app error', error, 'IPC');
       return {
         success: false,
         error: {
@@ -641,7 +610,7 @@ function registerIpcHandlers() {
     }
   });
   
-  Logger.log('IPC handlers registered successfully');
+  Logger.debug('IPC handlers registered successfully', null, 'Application');
 }
 
 function createWindow() {
@@ -682,6 +651,14 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   try {
+    Logger.logAppEvent('startup', { 
+      version: app.getVersion(),
+      platform: process.platform,
+      arch: process.arch,
+      electronVersion: process.versions.electron,
+      nodeVersion: process.versions.node
+    });
+    
     // Initialize services before creating window
     await initializeServices();
     
@@ -697,13 +674,18 @@ app.whenReady().then(async () => {
       }
     });
   } catch (error) {
-    Logger.error('Application initialization failed', error);
+    Logger.error('Application initialization failed', error, 'Application');
     app.quit();
   }
 });
 
 app.on('window-all-closed', () => {
+  Logger.logAppEvent('shutdown', { reason: 'All windows closed' });
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  Logger.logAppEvent('shutdown', { reason: 'Application quit requested' });
 });

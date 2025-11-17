@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const Logger = require('../utils/logger');
 
 class AuthManager {
   constructor(dataStore) {
@@ -15,10 +16,13 @@ class AuthManager {
    */
   async authenticate(username, password) {
     try {
+      Logger.debug(`Authentication attempt for user: ${username}`, null, 'AuthManager');
+      
       const credentials = await this.dataStore.getCredentials();
       
       // Check if username matches
       if (credentials.username !== username) {
+        Logger.logAuthAttempt(username, false, 'Username does not match');
         return {
           success: false,
           error: {
@@ -34,6 +38,7 @@ class AuthManager {
       const passwordMatch = await bcrypt.compare(password, credentials.passwordHash);
       
       if (!passwordMatch) {
+        Logger.logAuthAttempt(username, false, 'Password verification failed');
         return {
           success: false,
           error: {
@@ -52,10 +57,13 @@ class AuthManager {
         authenticatedAt: new Date().toISOString()
       };
 
+      Logger.logAuthAttempt(username, true);
       return {
         success: true
       };
     } catch (error) {
+      Logger.error('Authentication error', error, 'AuthManager');
+      Logger.logAuthAttempt(username, false, error.message);
       return {
         success: false,
         error: {
@@ -73,8 +81,11 @@ class AuthManager {
    * @returns {Promise<{success: boolean}>}
    */
   async logout() {
+    const username = this.currentUser ? this.currentUser.username : 'unknown';
     this.authenticated = false;
     this.currentUser = null;
+    
+    Logger.info(`User logged out: ${username}`, null, 'AuthManager');
     
     return {
       success: true
