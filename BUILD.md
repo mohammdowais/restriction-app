@@ -57,11 +57,13 @@ The built application will be located in the `dist/` directory:
 - `dist/Group Policy Manager-1.0.0-Setup.exe` - Windows installer
 - `dist/win-unpacked/` - Unpacked application files
 
-## Application Icon
+## Application Icon (Optional)
 
-Place your application icon at `build/icon.ico` before building. The icon should be:
-- ICO format
-- Multiple sizes (16x16, 32x32, 48x48, 256x256)
+The application will build with the default Electron icon. To use a custom icon:
+
+1. Create or obtain an ICO file with multiple sizes (16x16, 32x32, 48x48, 256x256)
+2. Save it as `build/icon.ico`
+3. Uncomment the icon lines in package.json under the `win` and `nsis` sections
 
 ## Administrator Privileges
 

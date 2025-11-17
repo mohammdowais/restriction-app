@@ -6,10 +6,10 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:dir": "electron-builder --dir",
-    "pack": "electron-builder --dir"
+    "build": "set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder",
+    "build:win": "set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --win",
+    "build:dir": "set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --dir",
+    "pack": "set CSC_IDENTITY_AUTO_DISCOVERY=false && electron-builder --dir"
   },
   "keywords": [
     "electron",
@@ -49,9 +49,10 @@
           ]
         }
       ],
-      "icon": "build/icon.ico",
       "requestedExecutionLevel": "requireAdministrator",
-      "artifactName": "${productName}-${version}-Setup.${ext}"
+      "artifactName": "${productName}-${version}-Setup.${ext}",
+      "sign": null,
+      "verifyUpdateCodeSignature": false
     },
     "nsis": {
       "oneClick": false,
@@ -59,8 +60,6 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Group Policy Manager",
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
       "license": "LICENSE.txt"
     },
     "publish": null
