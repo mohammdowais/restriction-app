@@ -153,6 +153,27 @@ h3 {
   box-shadow: var(--shadow-sm);
 }
 
+.btn-danger {
+  background-color: var(--danger-red);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: var(--danger-red-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: var(--font-size-small);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -391,6 +412,12 @@ h3 {
 
 .app-header h1 {
   color: var(--primary-blue);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
 }
 
 .app-main {

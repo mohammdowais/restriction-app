@@ -10,7 +10,10 @@
   <div class="app-container">
     <header class="app-header">
       <h1>Group Policy Manager</h1>
-      <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+      <div class="header-actions">
+        <button id="resetAllBtn" class="btn btn-danger">Reset All Policies</button>
+        <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+      </div>
     </header>
     
     <main class="app-main">
@@ -64,6 +67,35 @@
       <div id="messageArea" class="message-area"></div>
     </main>
   </div>
+
+  <!-- Reset Confirmation Modal -->
+  <div id="resetModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Reset All Policies</h2>
+        <span class="close-modal" id="closeResetModal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color: var(--text-primary); line-height: 1.6;">
+          This will disable all group policies and restore default settings. All configurations will be reset:
+        </p>
+        <ul style="margin-bottom: 16px; padding-left: 24px; color: var(--text-secondary); line-height: 1.8;">
+          <li>External drive write blocking will be disabled</li>
+          <li>Website blocking will be disabled</li>
+          <li>Domain whitelist will be cleared</li>
+          <li>All toggles will be set to disabled state</li>
+        </ul>
+        <p style="color: var(--danger-red); font-weight: 500;">
+          Are you sure you want to continue?
+        </p>
+        <div class="modal-actions">
+          <button id="cancelResetBtn" class="btn btn-secondary">Cancel</button>
+          <button id="confirmResetBtn" class="btn btn-danger">Reset All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="scripts/renderer.js"></script>
 </body>
 </html>

@@ -13,6 +13,11 @@ const domainList = document.getElementById('domainList');
 const logoutBtn = document.getElementById('logoutBtn');
 const changePasswordBtn = document.getElementById('changePasswordBtn');
 const messageArea = document.getElementById('messageArea');
+const resetAllBtn = document.getElementById('resetAllBtn');
+const resetModal = document.getElementById('resetModal');
+const closeResetModal = document.getElementById('closeResetModal');
+const cancelResetBtn = document.getElementById('cancelResetBtn');
+const confirmResetBtn = document.getElementById('confirmResetBtn');
 
 // Initialize application on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -74,6 +79,19 @@ function setupEventListeners() {
   // Settings and logout event handlers (Subtask 11.3)
   logoutBtn.addEventListener('click', handleLogout);
   changePasswordBtn.addEventListener('click', handleChangePassword);
+  
+  // Reset modal event handlers (Task 10.4)
+  resetAllBtn.addEventListener('click', showResetModal);
+  closeResetModal.addEventListener('click', hideResetModal);
+  cancelResetBtn.addEventListener('click', hideResetModal);
+  confirmResetBtn.addEventListener('click', handleResetAllPolicies);
+  
+  // Close modal when clicking outside of it
+  resetModal.addEventListener('click', (e) => {
+    if (e.target === resetModal) {
+      hideResetModal();
+    }
+  });
 }
 
 // ============================================================================
@@ -354,6 +372,78 @@ function handleChangePassword() {
   // Redirect to login page with password recovery modal
   // The password recovery functionality is already implemented in login.js
   window.location.href = 'login.html?showPasswordRecovery=true';
+}
+
+// ============================================================================
+// Task 10.4: Reset Confirmation Modal
+// Requirements: 9.1, 9.2
+// ============================================================================
+
+/**
+ * Show the reset confirmation modal
+ * Requirements: 9.1
+ */
+function showResetModal() {
+  resetModal.classList.add('show');
+  // Prevent body scroll when modal is open
+  document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Hide the reset confirmation modal
+ * Requirements: 9.1
+ */
+function hideResetModal() {
+  resetModal.classList.remove('show');
+  // Restore body scroll
+  document.body.style.overflow = '';
+}
+
+/**
+ * Handle reset all policies confirmation
+ * Requirements: 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8
+ */
+async function handleResetAllPolicies() {
+  // Hide the modal first
+  hideResetModal();
+  
+  try {
+    // Show loading state
+    confirmResetBtn.disabled = true;
+    confirmResetBtn.textContent = 'Resetting...';
+    
+    const result = await window.api.resetAllPolicies();
+    
+    if (result.success) {
+      // Update all toggles to disabled state (Requirement 9.6)
+      driveBlockToggle.checked = false;
+      websiteBlockToggle.checked = false;
+      whitelistToggle.checked = false;
+      
+      // Update status indicators (Requirement 9.6)
+      updateStatusIndicator(driveStatus, false);
+      updateStatusIndicator(websiteStatus, false);
+      updateStatusIndicator(whitelistStatus, false);
+      
+      // Clear domain list (Requirement 9.5)
+      await loadDomainList();
+      
+      // Show success message (Requirement 9.8)
+      showSuccessMessage(
+        'All policies have been reset successfully',
+        'All group policies have been disabled and settings restored to default state.'
+      );
+    } else {
+      showErrorMessage(result.error, 'reset policies');
+    }
+  } catch (error) {
+    console.error('Error resetting policies:', error);
+    showErrorMessage({ message: 'Error resetting policies', details: error.message });
+  } finally {
+    // Restore button state
+    confirmResetBtn.disabled = false;
+    confirmResetBtn.textContent = 'Reset All';
+  }
 }
 
 // ============================================================================
