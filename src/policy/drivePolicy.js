@@ -18,37 +18,76 @@ class DrivePolicy {
    * Block write access to external removable drives
    * @returns {Promise<Object>} Result object with success status and message
    */
-  async blockWriteAccess() {
-    try {
-      Logger.info('Attempting to block external drive write access', null, 'DrivePolicy');
+  // async blockWriteAccess() {
+  //   try {
+  //     Logger.info('Attempting to block external drive write access', null, 'DrivePolicy');
 
-      // Verify administrator privileges
-      const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Block External Drive Write Access');
-      if (!privilegeCheck.success) {
-        Logger.warn('Privilege check failed for blocking drive write access', privilegeCheck.error, 'DrivePolicy');
-        return privilegeCheck;
-      }
+  //     // Verify administrator privileges
+  //     const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Block External Drive Write Access');
+  //     if (!privilegeCheck.success) {
+  //       Logger.warn('Privilege check failed for blocking drive write access', privilegeCheck.error, 'DrivePolicy');
+  //       return privilegeCheck;
+  //     }
 
-      // Create the registry key if it doesn't exist, then set WriteProtect to 1
-      const command = `powershell -Command "` +
-        `if (-not (Test-Path '${this.registryPath}')) { ` +
-        `New-Item -Path '${this.registryPath}' -Force | Out-Null; ` +
-        `}; ` +
-        `Set-ItemProperty -Path '${this.registryPath}' -Name '${this.registryValueName}' -Value 1 -Type DWord -Force"`;
+  //     // Create the registry key if it doesn't exist, then set WriteProtect to 1
+  //     const command = `powershell -Command "` +
+  //       `if (-not (Test-Path '${this.registryPath}')) { ` +
+  //       `New-Item -Path '${this.registryPath}' -Force | Out-Null; ` +
+  //       `}; ` +
+  //       `Set-ItemProperty -Path '${this.registryPath}' -Name '${this.registryValueName}' -Value 1 -Type DWord -Force"`;
 
-      await execAsync(command, { shell: 'powershell.exe' });
+  //     await execAsync(command, { shell: 'powershell.exe' });
 
-      Logger.info('External drive write access blocked successfully', null, 'DrivePolicy');
+  //     Logger.info('External drive write access blocked successfully', null, 'DrivePolicy');
       
-      return {
-        success: true,
-        message: 'External drive write access has been blocked',
-        status: 'blocked'
-      };
-    } catch (error) {
-      return this._handleRegistryError(error, 'block write access');
+  //     return {
+  //       success: true,
+  //       message: 'External drive write access has been blocked',
+  //       status: 'blocked'
+  //     };
+  //   } catch (error) {
+  //     return this._handleRegistryError(error, 'block write access');
+  //   }
+  // }
+  async blockWriteAccess() {
+  try {
+    Logger.info('Attempting to block external drive write access', null, 'DrivePolicy');
+
+    // Verify administrator privileges
+    const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Block External Drive Write Access');
+    if (!privilegeCheck.success) {
+      Logger.warn('Privilege check failed for blocking drive write access', privilegeCheck.error, 'DrivePolicy');
+      return privilegeCheck;
     }
+
+    const command = `
+      if (-not (Test-Path '${this.registryPath}')) {
+        New-Item -Path '${this.registryPath}' -Force | Out-Null;
+      };
+      Set-ItemProperty -Path '${this.registryPath}' -Name '${this.registryValueName}' -Value 1 -Type DWord -Force
+    `;
+
+    const { stdout, stderr } = await execAsync(`powershell -Command "${command}"`, {
+      shell: 'powershell.exe'
+    });
+
+    Logger.info(`PowerShell stdout: ${stdout}`, null, 'DrivePolicy');
+    if (stderr) {
+      Logger.warn(`PowerShell stderr: ${stderr}`, null, 'DrivePolicy');
+    }
+
+    Logger.info('External drive write access blocked successfully', null, 'DrivePolicy');
+
+    return {
+      success: true,
+      message: 'External drive write access has been blocked',
+      status: 'blocked'
+    };
+
+  } catch (error) {
+    return this._handleRegistryError(error, 'block write access');
   }
+}
 
   /**
    * Allow write access to external removable drives
