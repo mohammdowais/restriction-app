@@ -339,6 +339,7 @@
 
 
 
+
     - Handle reset button click
     - Show reset confirmation modal
     - Call IPC resetAllPolicies method on confirmation
@@ -347,7 +348,11 @@
     - Show success message
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
   
-  - [ ] 11.6 Implement security question setup
+
+  - [x] 11.6 Implement security question setup
+
+
+
 
     - Handle security question setup button click
     - Show security question modal
@@ -356,7 +361,12 @@
     - Show success/error messages
     - _Requirements: 5.1, 5.2_
   
-  - [ ] 11.7 Implement domain list display updates
+  - [x] 11.7 Implement domain list display updates
+
+
+
+
+
     - Fetch and display whitelisted domains on load
     - Fetch and display blocked domains when website blocking is enabled
     - Update lists in real-time when domains are added/removed

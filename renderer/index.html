@@ -55,13 +55,29 @@
             <input type="text" id="domainInput" placeholder="example.com">
             <button id="addDomainBtn" class="btn btn-primary">Add Domain</button>
           </div>
-          <ul id="domainList" class="domain-list"></ul>
+          
+          <!-- Whitelisted Domains Section -->
+          <div class="domain-list-section">
+            <h4>Whitelisted Domains</h4>
+            <ul id="whitelistedDomainsList" class="domain-list">
+              <li class="domain-item empty">No domains whitelisted</li>
+            </ul>
+          </div>
+          
+          <!-- Blocked Domains Section -->
+          <div class="domain-list-section">
+            <h4>Blocked Websites</h4>
+            <ul id="blockedDomainsList" class="domain-list">
+              <li class="domain-item empty">No websites blocked</li>
+            </ul>
+          </div>
         </div>
       </section>
 
       <section class="control-panel">
         <h2>Settings</h2>
         <button id="changePasswordBtn" class="btn btn-primary">Change Password</button>
+        <button id="setupSecurityQuestionBtn" class="btn btn-primary">Setup Security Question</button>
       </section>
 
       <div id="messageArea" class="message-area"></div>
@@ -92,6 +108,35 @@
           <button id="cancelResetBtn" class="btn btn-secondary">Cancel</button>
           <button id="confirmResetBtn" class="btn btn-danger">Reset All</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Question Setup Modal -->
+  <div id="securityQuestionModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Setup Security Question</h2>
+        <span class="close-modal" id="closeSecurityQuestionModal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color: var(--text-secondary); line-height: 1.6;">
+          Set up a security question to help you recover your password if you forget it.
+        </p>
+        <form id="securityQuestionForm">
+          <div class="form-group">
+            <label for="securityQuestion">Security Question:</label>
+            <input type="text" id="securityQuestion" placeholder="What is your favorite color?" required>
+          </div>
+          <div class="form-group">
+            <label for="securityAnswer">Answer:</label>
+            <input type="text" id="securityAnswer" placeholder="Enter your answer" required>
+          </div>
+          <div class="modal-actions">
+            <button type="button" id="cancelSecurityQuestionBtn" class="btn btn-secondary">Cancel</button>
+            <button type="submit" id="saveSecurityQuestionBtn" class="btn btn-primary">Save</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

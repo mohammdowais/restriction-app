@@ -9,7 +9,8 @@ const websiteStatus = document.getElementById('websiteStatus');
 const whitelistStatus = document.getElementById('whitelistStatus');
 const domainInput = document.getElementById('domainInput');
 const addDomainBtn = document.getElementById('addDomainBtn');
-const domainList = document.getElementById('domainList');
+const whitelistedDomainsList = document.getElementById('whitelistedDomainsList');
+const blockedDomainsList = document.getElementById('blockedDomainsList');
 const logoutBtn = document.getElementById('logoutBtn');
 const changePasswordBtn = document.getElementById('changePasswordBtn');
 const messageArea = document.getElementById('messageArea');
@@ -18,6 +19,13 @@ const resetModal = document.getElementById('resetModal');
 const closeResetModal = document.getElementById('closeResetModal');
 const cancelResetBtn = document.getElementById('cancelResetBtn');
 const confirmResetBtn = document.getElementById('confirmResetBtn');
+const setupSecurityQuestionBtn = document.getElementById('setupSecurityQuestionBtn');
+const securityQuestionModal = document.getElementById('securityQuestionModal');
+const closeSecurityQuestionModal = document.getElementById('closeSecurityQuestionModal');
+const cancelSecurityQuestionBtn = document.getElementById('cancelSecurityQuestionBtn');
+const securityQuestionForm = document.getElementById('securityQuestionForm');
+const securityQuestionInput = document.getElementById('securityQuestion');
+const securityAnswerInput = document.getElementById('securityAnswer');
 
 // Initialize application on page load
 document.addEventListener('DOMContentLoaded', async () => {
@@ -79,8 +87,8 @@ async function loadCurrentStatus() {
       }
     }
     
-    // Load domain list
-    await loadDomainList();
+    // Load domain lists
+    await loadDomainLists();
   } catch (error) {
     console.error('Error loading status:', error);
     showErrorMessage({ message: 'Error loading application status', details: error.message });
@@ -118,6 +126,19 @@ function setupEventListeners() {
   resetModal.addEventListener('click', (e) => {
     if (e.target === resetModal) {
       hideResetModal();
+    }
+  });
+  
+  // Security question modal event handlers (Subtask 11.6)
+  setupSecurityQuestionBtn.addEventListener('click', showSecurityQuestionModal);
+  closeSecurityQuestionModal.addEventListener('click', hideSecurityQuestionModal);
+  cancelSecurityQuestionBtn.addEventListener('click', hideSecurityQuestionModal);
+  securityQuestionForm.addEventListener('submit', handleSecurityQuestionSetup);
+  
+  // Close security question modal when clicking outside of it
+  securityQuestionModal.addEventListener('click', (e) => {
+    if (e.target === securityQuestionModal) {
+      hideSecurityQuestionModal();
     }
   });
 }
@@ -158,7 +179,7 @@ async function handleDriveBlockToggle(event) {
 
 /**
  * Handle website block toggle change
- * Requirements: 2.2, 2.3, 2.4, 2.5
+ * Requirements: 2.2, 2.3, 2.4, 2.5, 7.1
  */
 async function handleWebsiteBlockToggle(event) {
   const enabled = event.target.checked;
@@ -168,6 +189,8 @@ async function handleWebsiteBlockToggle(event) {
     
     if (result.success) {
       updateStatusIndicator(websiteStatus, enabled);
+      // Update blocked domains list in real-time
+      await loadBlockedDomains();
       showSuccessMessage(
         enabled ? 'All websites blocked successfully' : 'Website blocking disabled',
         enabled ? 'All browsers will be blocked from accessing websites.' : 'Users can now access websites normally.'
@@ -187,7 +210,7 @@ async function handleWebsiteBlockToggle(event) {
 
 /**
  * Handle whitelist toggle change
- * Requirements: 3.4, 3.5, 3.6
+ * Requirements: 3.4, 3.5, 3.6, 7.2
  */
 async function handleWhitelistToggle(event) {
   const enabled = event.target.checked;
@@ -197,6 +220,8 @@ async function handleWhitelistToggle(event) {
     
     if (result.success) {
       updateStatusIndicator(whitelistStatus, enabled);
+      // Update whitelisted domains list in real-time
+      await loadWhitelistedDomains();
       showSuccessMessage(
         enabled ? 'Domain whitelist enabled successfully' : 'Domain whitelist disabled',
         enabled ? 'Only whitelisted domains will be accessible.' : 'All websites are now accessible (unless blocked).'
@@ -237,7 +262,7 @@ function updateStatusIndicator(element, enabled) {
 
 /**
  * Handle add domain button click
- * Requirements: 3.2, 3.6
+ * Requirements: 3.2, 3.6, 7.3
  */
 async function handleAddDomain() {
   const domain = domainInput.value.trim();
@@ -266,7 +291,7 @@ async function handleAddDomain() {
     
     if (result.success) {
       domainInput.value = ''; // Clear input
-      await loadDomainList(); // Refresh domain list
+      await loadDomainLists(); // Refresh domain lists in real-time
       showSuccessMessage(
         `Domain "${domain}" added successfully`,
         'The domain has been added to the whitelist and will be accessible when whitelist mode is enabled.'
@@ -282,14 +307,14 @@ async function handleAddDomain() {
 
 /**
  * Handle remove domain button click
- * Requirements: 3.3
+ * Requirements: 3.3, 7.3
  */
 async function handleRemoveDomain(domain) {
   try {
     const result = await window.api.removeDomain(domain);
     
     if (result.success) {
-      await loadDomainList(); // Refresh domain list
+      await loadDomainLists(); // Refresh domain lists in real-time
       showSuccessMessage(
         `Domain "${domain}" removed successfully`,
         'The domain has been removed from the whitelist and will no longer be accessible in whitelist mode.'
@@ -304,39 +329,72 @@ async function handleRemoveDomain(domain) {
 }
 
 /**
- * Load and display domain list
- * Requirements: 3.2, 3.3
+ * Load and display both whitelisted and blocked domain lists
+ * Requirements: 7.1, 7.2, 7.3
  */
-async function loadDomainList() {
+async function loadDomainLists() {
+  await Promise.all([
+    loadWhitelistedDomains(),
+    loadBlockedDomains()
+  ]);
+}
+
+/**
+ * Load and display whitelisted domains
+ * Requirements: 7.2, 7.3
+ */
+async function loadWhitelistedDomains() {
   try {
-    const result = await window.api.getDomains();
+    const result = await window.api.getWhitelistedDomains();
     
     if (result.success) {
       const domains = result.domains || [];
-      displayDomainList(domains);
+      displayWhitelistedDomains(domains);
     } else {
-      console.error('Failed to load domains:', result.error);
+      console.error('Failed to load whitelisted domains:', result.error);
     }
   } catch (error) {
-    console.error('Error loading domains:', error);
+    console.error('Error loading whitelisted domains:', error);
   }
 }
 
 /**
- * Display domain list in UI
- * Requirements: 3.2, 3.3
+ * Load and display blocked domains
+ * Requirements: 7.1, 7.3
  */
-function displayDomainList(domains) {
-  domainList.innerHTML = '';
+async function loadBlockedDomains() {
+  try {
+    const result = await window.api.getBlockedDomains();
+    
+    if (result.success) {
+      const domains = result.domains || [];
+      const description = result.description || '';
+      displayBlockedDomains(domains, description);
+    } else {
+      console.error('Failed to load blocked domains:', result.error);
+    }
+  } catch (error) {
+    console.error('Error loading blocked domains:', error);
+  }
+}
+
+/**
+ * Display whitelisted domains in UI
+ * Requirements: 7.2, 7.3, 7.4, 7.5
+ */
+function displayWhitelistedDomains(domains) {
+  whitelistedDomainsList.innerHTML = '';
   
+  // Show empty state message if no domains
   if (domains.length === 0) {
     const emptyItem = document.createElement('li');
     emptyItem.className = 'domain-item empty';
-    emptyItem.textContent = 'No domains added';
-    domainList.appendChild(emptyItem);
+    emptyItem.textContent = 'No domains whitelisted';
+    whitelistedDomainsList.appendChild(emptyItem);
     return;
   }
   
+  // Display each whitelisted domain with remove button
   domains.forEach(domain => {
     const listItem = document.createElement('li');
     listItem.className = 'domain-item';
@@ -352,7 +410,44 @@ function displayDomainList(domains) {
     
     listItem.appendChild(domainText);
     listItem.appendChild(removeBtn);
-    domainList.appendChild(listItem);
+    whitelistedDomainsList.appendChild(listItem);
+  });
+}
+
+/**
+ * Display blocked domains in UI
+ * Requirements: 7.1, 7.3, 7.4, 7.5
+ */
+function displayBlockedDomains(domains, description) {
+  blockedDomainsList.innerHTML = '';
+  
+  // Show empty state message if no domains are blocked
+  if (domains.length === 0) {
+    const emptyItem = document.createElement('li');
+    emptyItem.className = 'domain-item empty';
+    emptyItem.textContent = 'No websites blocked';
+    blockedDomainsList.appendChild(emptyItem);
+    return;
+  }
+  
+  // Display blocked domains (read-only, no remove button)
+  domains.forEach(domain => {
+    const listItem = document.createElement('li');
+    listItem.className = 'domain-item blocked';
+    
+    const domainText = document.createElement('span');
+    domainText.className = 'domain-text';
+    
+    // If domain is "*", show descriptive text
+    if (domain === '*') {
+      domainText.textContent = description || 'All websites are blocked';
+      domainText.style.fontStyle = 'italic';
+    } else {
+      domainText.textContent = domain;
+    }
+    
+    listItem.appendChild(domainText);
+    blockedDomainsList.appendChild(listItem);
   });
 }
 
@@ -453,8 +548,8 @@ async function handleResetAllPolicies() {
       updateStatusIndicator(websiteStatus, false);
       updateStatusIndicator(whitelistStatus, false);
       
-      // Clear domain list (Requirement 9.5)
-      await loadDomainList();
+      // Clear domain lists (Requirement 9.5)
+      await loadDomainLists();
       
       // Show success message (Requirement 9.8)
       showSuccessMessage(
@@ -471,6 +566,102 @@ async function handleResetAllPolicies() {
     // Restore button state
     confirmResetBtn.disabled = false;
     confirmResetBtn.textContent = 'Reset All';
+  }
+}
+
+// ============================================================================
+// Subtask 11.6: Security Question Setup
+// Requirements: 5.1, 5.2
+// ============================================================================
+
+/**
+ * Show the security question setup modal
+ * Requirements: 5.1
+ */
+function showSecurityQuestionModal() {
+  securityQuestionModal.classList.add('show');
+  // Clear form inputs
+  securityQuestionInput.value = '';
+  securityAnswerInput.value = '';
+  // Prevent body scroll when modal is open
+  document.body.style.overflow = 'hidden';
+}
+
+/**
+ * Hide the security question setup modal
+ * Requirements: 5.1
+ */
+function hideSecurityQuestionModal() {
+  securityQuestionModal.classList.remove('show');
+  // Restore body scroll
+  document.body.style.overflow = '';
+  // Clear form inputs
+  securityQuestionInput.value = '';
+  securityAnswerInput.value = '';
+}
+
+/**
+ * Handle security question setup form submission
+ * Requirements: 5.1, 5.2
+ */
+async function handleSecurityQuestionSetup(event) {
+  event.preventDefault();
+  
+  const question = securityQuestionInput.value.trim();
+  const answer = securityAnswerInput.value.trim();
+  
+  // Validate form inputs
+  if (!question || question.length < 5) {
+    showErrorMessage({ 
+      message: 'Invalid security question',
+      code: 'INVALID_INPUT',
+      details: 'Security question must be at least 5 characters long'
+    });
+    return;
+  }
+  
+  if (!answer || answer.length < 3) {
+    showErrorMessage({ 
+      message: 'Invalid security answer',
+      code: 'INVALID_INPUT',
+      details: 'Security answer must be at least 3 characters long'
+    });
+    return;
+  }
+  
+  try {
+    // Disable submit button while processing
+    const saveBtn = document.getElementById('saveSecurityQuestionBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    
+    // Call IPC setupSecurityQuestion method
+    const result = await window.api.setupSecurityQuestion(question, answer);
+    
+    if (result.success) {
+      // Hide modal
+      hideSecurityQuestionModal();
+      
+      // Show success message
+      showSuccessMessage(
+        'Security question setup successfully',
+        'You can now use your security question to recover your password if needed.'
+      );
+    } else {
+      // Show error message
+      showErrorMessage(result.error, 'setup security question');
+    }
+  } catch (error) {
+    console.error('Error setting up security question:', error);
+    showErrorMessage({ 
+      message: 'Error setting up security question', 
+      details: error.message 
+    });
+  } finally {
+    // Restore button state
+    const saveBtn = document.getElementById('saveSecurityQuestionBtn');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save';
   }
 }
 

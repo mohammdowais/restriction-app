@@ -84,6 +84,21 @@ contextBridge.exposeInMainWorld('api', {
   getSecurityQuestion: () => {
     return ipcRenderer.invoke('auth:getSecurityQuestion');
   },
+
+  setupSecurityQuestion: (question, answer) => {
+    if (!validators.isNonEmptyString(question) || !validators.isNonEmptyString(answer)) {
+      return Promise.resolve({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Invalid input parameters',
+          details: 'Question and answer must be non-empty strings',
+          recoverable: true
+        }
+      });
+    }
+    return ipcRenderer.invoke('auth:setupSecurityQuestion', question, answer);
+  },
   
   // Policy methods
   toggleDriveBlock: (enabled) => {
@@ -164,6 +179,14 @@ contextBridge.exposeInMainWorld('api', {
 
   getDomains: () => {
     return ipcRenderer.invoke('policy:getDomains');
+  },
+
+  getWhitelistedDomains: () => {
+    return ipcRenderer.invoke('policy:getWhitelistedDomains');
+  },
+
+  getBlockedDomains: () => {
+    return ipcRenderer.invoke('policy:getBlockedDomains');
   },
   
   // Settings and status

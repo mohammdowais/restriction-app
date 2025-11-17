@@ -200,6 +200,49 @@ function registerIpcHandlers() {
       };
     }
   });
+
+  /**
+   * Handle setup security question request
+   */
+  ipcMain.handle('auth:setupSecurityQuestion', async (event, question, answer) => {
+    try {
+      Logger.debug('Security question setup request', null, 'IPC');
+      
+      // Check if user is authenticated
+      if (!authManager.isAuthenticated()) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_AUTHENTICATED',
+            message: 'Authentication required',
+            details: 'You must be logged in to setup security question',
+            recoverable: true
+          }
+        };
+      }
+      
+      const result = await passwordManager.setSecurityQuestion(question, answer);
+      
+      if (result.success) {
+        Logger.info('Security question setup successfully', null, 'IPC');
+      } else {
+        Logger.warn('Security question setup failed', result.error, 'IPC');
+      }
+      
+      return result;
+    } catch (error) {
+      Logger.error('Setup security question error', error, 'IPC');
+      return {
+        success: false,
+        error: {
+          code: 'SECURITY_QUESTION_ERROR',
+          message: 'Failed to setup security question',
+          details: error.message,
+          recoverable: false
+        }
+      };
+    }
+  });
   
   // ===== Policy Handlers =====
   
@@ -484,6 +527,97 @@ function registerIpcHandlers() {
         error: {
           code: 'DATA_ERROR',
           message: 'Failed to retrieve domains',
+          details: error.message,
+          recoverable: false
+        }
+      };
+    }
+  });
+
+  /**
+   * Handle get whitelisted domains request
+   */
+  ipcMain.handle('policy:getWhitelistedDomains', async (event) => {
+    try {
+      // Check if user is authenticated
+      if (!authManager.isAuthenticated()) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_AUTHENTICATED',
+            message: 'Authentication required',
+            details: 'You must be logged in to view policies',
+            recoverable: true
+          }
+        };
+      }
+      
+      const settings = await dataStore.getSettings();
+      
+      return {
+        success: true,
+        domains: settings.whitelistedDomains || [],
+        count: (settings.whitelistedDomains || []).length
+      };
+    } catch (error) {
+      Logger.error('Get whitelisted domains error', error, 'IPC');
+      return {
+        success: false,
+        error: {
+          code: 'DATA_ERROR',
+          message: 'Failed to retrieve whitelisted domains',
+          details: error.message,
+          recoverable: false
+        }
+      };
+    }
+  });
+
+  /**
+   * Handle get blocked domains request
+   */
+  ipcMain.handle('policy:getBlockedDomains', async (event) => {
+    try {
+      // Check if user is authenticated
+      if (!authManager.isAuthenticated()) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_AUTHENTICATED',
+            message: 'Authentication required',
+            details: 'You must be logged in to view policies',
+            recoverable: true
+          }
+        };
+      }
+      
+      const settings = await dataStore.getSettings();
+      
+      // If website blocking is enabled, all websites are blocked (represented as "*")
+      // Return a descriptive list for the UI
+      if (settings.websiteBlockEnabled) {
+        return {
+          success: true,
+          domains: ['*'],
+          description: 'All websites are blocked',
+          count: 1
+        };
+      }
+      
+      // If no blocking is enabled, return empty list
+      return {
+        success: true,
+        domains: [],
+        description: 'No websites are blocked',
+        count: 0
+      };
+    } catch (error) {
+      Logger.error('Get blocked domains error', error, 'IPC');
+      return {
+        success: false,
+        error: {
+          code: 'DATA_ERROR',
+          message: 'Failed to retrieve blocked domains',
           details: error.message,
           recoverable: false
         }
