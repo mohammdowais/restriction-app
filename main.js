@@ -225,10 +225,14 @@ function registerIpcHandlers() {
         blockWriteAccess: enabled
       });
       
-      // Update settings in data store
+      // Update settings and toggle states in data store
       if (result.success) {
         await dataStore.updateSettings({
           driveBlockEnabled: enabled
+        });
+        
+        await dataStore.updateToggleStates({
+          driveBlock: enabled
         });
       }
       
@@ -269,10 +273,14 @@ function registerIpcHandlers() {
         blockAllWebsites: enabled
       });
       
-      // Update settings in data store
+      // Update settings and toggle states in data store
       if (result.success) {
         await dataStore.updateSettings({
           websiteBlockEnabled: enabled
+        });
+        
+        await dataStore.updateToggleStates({
+          websiteBlock: enabled
         });
       }
       
@@ -318,10 +326,14 @@ function registerIpcHandlers() {
         domains: domains
       });
       
-      // Update settings in data store
+      // Update settings and toggle states in data store
       if (result.success) {
         await dataStore.updateSettings({
           whitelistEnabled: enabled
+        });
+        
+        await dataStore.updateToggleStates({
+          whitelist: enabled
         });
       }
       
@@ -505,6 +517,9 @@ function registerIpcHandlers() {
       // Get settings from data store
       const settings = await dataStore.getSettings();
       
+      // Get toggle states from data store
+      const toggleStates = await dataStore.getToggleStates();
+      
       return {
         success: true,
         status: {
@@ -512,6 +527,7 @@ function registerIpcHandlers() {
           user: authManager.getCurrentUser(),
           policies: policyStatus.success ? policyStatus.policies : null,
           settings: settings,
+          toggleStates: toggleStates,
           timestamp: new Date().toISOString()
         }
       };
@@ -561,6 +577,101 @@ function registerIpcHandlers() {
         error: {
           code: 'SETTINGS_ERROR',
           message: 'Failed to update settings',
+          details: error.message,
+          recoverable: false
+        }
+      };
+    }
+  });
+  
+  /**
+   * Handle sync policy states request
+   */
+  ipcMain.handle('policy:syncPolicyStates', async (event) => {
+    try {
+      // Check if user is authenticated
+      if (!authManager.isAuthenticated()) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_AUTHENTICATED',
+            message: 'Authentication required',
+            details: 'You must be logged in to sync policy states',
+            recoverable: true
+          }
+        };
+      }
+      
+      const result = await policyManager.syncPolicyStates();
+      
+      // Update toggle states in data store if sync was successful
+      if (result.success) {
+        await dataStore.updateToggleStates(result.states);
+        Logger.info('Toggle states synchronized and saved', result.states, 'IPC');
+      }
+      
+      return result;
+    } catch (error) {
+      Logger.error('Sync policy states error', error, 'IPC');
+      return {
+        success: false,
+        error: {
+          code: 'SYNC_ERROR',
+          message: 'Failed to synchronize policy states',
+          details: error.message,
+          recoverable: false
+        }
+      };
+    }
+  });
+  
+  /**
+   * Handle reset all policies request
+   */
+  ipcMain.handle('policy:resetAllPolicies', async (event) => {
+    try {
+      // Check if user is authenticated
+      if (!authManager.isAuthenticated()) {
+        return {
+          success: false,
+          error: {
+            code: 'NOT_AUTHENTICATED',
+            message: 'Authentication required',
+            details: 'You must be logged in to reset policies',
+            recoverable: true
+          }
+        };
+      }
+      
+      const result = await policyManager.resetAllPolicies();
+      
+      // Update settings and toggle states in data store if reset was successful
+      if (result.success) {
+        await dataStore.updateSettings({
+          driveBlockEnabled: false,
+          websiteBlockEnabled: false,
+          whitelistEnabled: false,
+          whitelistedDomains: []
+        });
+        
+        await dataStore.updateToggleStates({
+          driveBlock: false,
+          websiteBlock: false,
+          whitelist: false,
+          lastSynced: new Date().toISOString()
+        });
+        
+        Logger.info('All policies reset and settings updated', null, 'IPC');
+      }
+      
+      return result;
+    } catch (error) {
+      Logger.error('Reset all policies error', error, 'IPC');
+      return {
+        success: false,
+        error: {
+          code: 'RESET_ERROR',
+          message: 'Failed to reset policies',
           details: error.message,
           recoverable: false
         }

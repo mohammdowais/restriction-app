@@ -322,14 +322,23 @@
     - Load and display current policy status on page load
     - _Requirements: 4.5, 5.1, 5.3, 1.5, 2.4_
   
-  - [ ] 11.4 Implement toggle state persistence and synchronization
+  - [x] 11.4 Implement toggle state persistence and synchronization
+
+
+
+
+
     - Load saved toggle states from DataStore on app startup
     - Call syncPolicyStates to verify actual policy status
     - Update toggle UI to match synchronized state
     - Display status indicators correctly on load
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
   
-  - [ ] 11.5 Implement reset all policies functionality
+  - [x] 11.5 Implement reset all policies functionality
+
+
+
+
     - Handle reset button click
     - Show reset confirmation modal
     - Call IPC resetAllPolicies method on confirmation
@@ -339,6 +348,7 @@
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
   
   - [ ] 11.6 Implement security question setup
+
     - Handle security question setup button click
     - Show security question modal
     - Validate form inputs

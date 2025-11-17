@@ -27,32 +27,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 /**
  * Load and display current policy status on page load
- * Requirements: 1.4, 2.4
+ * Requirements: 1.4, 2.4, 8.1, 8.2, 8.3, 8.4, 8.5
  */
 async function loadCurrentStatus() {
   try {
-    const result = await window.api.getStatus();
+    // First, synchronize policy states with actual Group Policy settings
+    const syncResult = await window.api.syncPolicyStates();
     
-    if (result.success) {
-      const status = result.status;
+    if (syncResult.success) {
+      const syncedStates = syncResult.states;
       
-      // Update drive block toggle and status
-      driveBlockToggle.checked = status.driveBlockEnabled || false;
-      updateStatusIndicator(driveStatus, status.driveBlockEnabled);
+      // Update toggles to match synchronized state
+      driveBlockToggle.checked = syncedStates.driveBlock || false;
+      updateStatusIndicator(driveStatus, syncedStates.driveBlock);
       
-      // Update website block toggle and status
-      websiteBlockToggle.checked = status.websiteBlockEnabled || false;
-      updateStatusIndicator(websiteStatus, status.websiteBlockEnabled);
+      websiteBlockToggle.checked = syncedStates.websiteBlock || false;
+      updateStatusIndicator(websiteStatus, syncedStates.websiteBlock);
       
-      // Update whitelist toggle and status
-      whitelistToggle.checked = status.whitelistEnabled || false;
-      updateStatusIndicator(whitelistStatus, status.whitelistEnabled);
+      whitelistToggle.checked = syncedStates.whitelist || false;
+      updateStatusIndicator(whitelistStatus, syncedStates.whitelist);
       
-      // Load domain list
-      await loadDomainList();
+      console.log('Policy states synchronized:', syncedStates);
     } else {
-      showErrorMessage(result.error, 'load status');
+      console.warn('Failed to sync policy states, loading from settings:', syncResult.error);
+      
+      // Fallback: Load from saved settings if sync fails
+      const result = await window.api.getStatus();
+      
+      if (result.success) {
+        const status = result.status;
+        
+        // Use toggle states if available, otherwise fall back to settings
+        const toggleStates = status.toggleStates || {};
+        
+        driveBlockToggle.checked = toggleStates.driveBlock !== undefined 
+          ? toggleStates.driveBlock 
+          : (status.settings?.driveBlockEnabled || false);
+        updateStatusIndicator(driveStatus, driveBlockToggle.checked);
+        
+        websiteBlockToggle.checked = toggleStates.websiteBlock !== undefined 
+          ? toggleStates.websiteBlock 
+          : (status.settings?.websiteBlockEnabled || false);
+        updateStatusIndicator(websiteStatus, websiteBlockToggle.checked);
+        
+        whitelistToggle.checked = toggleStates.whitelist !== undefined 
+          ? toggleStates.whitelist 
+          : (status.settings?.whitelistEnabled || false);
+        updateStatusIndicator(whitelistStatus, whitelistToggle.checked);
+      } else {
+        showErrorMessage(result.error, 'load status');
+      }
     }
+    
+    // Load domain list
+    await loadDomainList();
   } catch (error) {
     console.error('Error loading status:', error);
     showErrorMessage({ message: 'Error loading application status', details: error.message });

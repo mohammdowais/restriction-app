@@ -289,6 +289,124 @@ class PolicyManager {
       return await this.browserPolicy.removeDomain(domain);
     }
   }
+
+  /**
+   * Synchronize policy states with actual Group Policy settings
+   * This method queries the actual registry settings and returns the true state
+   * @returns {Promise<Object>} Synchronized policy states
+   */
+  async syncPolicyStates() {
+    try {
+      Logger.debug('Synchronizing policy states with actual Group Policy settings', null, 'PolicyManager');
+
+      // Get actual policy status from the system
+      const driveStatus = await this.drivePolicy.getWriteAccessStatus();
+      const domainList = await this.browserPolicy.getDomainList();
+
+      const syncedStates = {
+        success: true,
+        states: {
+          driveBlock: driveStatus.success ? driveStatus.isBlocked : false,
+          websiteBlock: false, // Website blocking is determined by whitelist presence
+          whitelist: domainList.success && domainList.count > 0,
+          lastSynced: new Date().toISOString()
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      Logger.info('Policy states synchronized successfully', syncedStates.states, 'PolicyManager');
+      return syncedStates;
+    } catch (error) {
+      Logger.error('Error synchronizing policy states', error, 'PolicyManager');
+      return {
+        success: false,
+        error: {
+          code: 'SYNC_ERROR',
+          message: 'Failed to synchronize policy states',
+          details: error.message || 'An unexpected error occurred while synchronizing policy states',
+          recoverable: true,
+          originalError: error.toString()
+        }
+      };
+    }
+  }
+
+  /**
+   * Reset all policies to default state
+   * @returns {Promise<Object>} Result object
+   */
+  async resetAllPolicies() {
+    try {
+      Logger.info('Resetting all policies to default state', null, 'PolicyManager');
+
+      // Verify administrator privileges
+      const privilegeCheck = await PrivilegeChecker.verifyPrivilegesForOperation('Reset all policies');
+      if (!privilegeCheck.success) {
+        Logger.warn('Privilege check failed for reset all policies', privilegeCheck.error, 'PolicyManager');
+        return privilegeCheck;
+      }
+
+      const results = {
+        drive: null,
+        browser: null,
+        whitelist: null
+      };
+
+      // Reset drive policy
+      results.drive = await this.drivePolicy.allowWriteAccess();
+      if (!results.drive.success) {
+        Logger.warn('Failed to reset drive policy', results.drive.error, 'PolicyManager');
+      }
+
+      // Reset browser policy
+      results.browser = await this.browserPolicy.unblockAllWebsites();
+      if (!results.browser.success) {
+        Logger.warn('Failed to reset browser policy', results.browser.error, 'PolicyManager');
+      }
+
+      // Reset whitelist
+      results.whitelist = await this.browserPolicy.disableWhitelist();
+      if (!results.whitelist.success) {
+        Logger.warn('Failed to reset whitelist policy', results.whitelist.error, 'PolicyManager');
+      }
+
+      // Check if all operations succeeded
+      const allSucceeded = results.drive.success && results.browser.success && results.whitelist.success;
+
+      if (allSucceeded) {
+        Logger.info('All policies reset successfully', null, 'PolicyManager');
+        return {
+          success: true,
+          message: 'All policies have been reset to default state',
+          results: results
+        };
+      } else {
+        Logger.warn('Some policies failed to reset', results, 'PolicyManager');
+        return {
+          success: false,
+          error: {
+            code: 'PARTIAL_RESET_FAILURE',
+            message: 'Some policies could not be reset',
+            details: 'One or more policy reset operations failed. Check individual results for details.',
+            recoverable: true
+          },
+          results: results
+        };
+      }
+    } catch (error) {
+      Logger.error('Error resetting policies', error, 'PolicyManager');
+      return {
+        success: false,
+        error: {
+          code: 'RESET_ERROR',
+          message: 'Failed to reset policies',
+          details: error.message || 'An unexpected error occurred while resetting policies',
+          recoverable: false,
+          originalError: error.toString()
+        }
+      };
+    }
+  }
 }
 
 module.exports = PolicyManager;

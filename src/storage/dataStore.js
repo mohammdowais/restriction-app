@@ -108,6 +108,12 @@ class DataStore {
         whitelistEnabled: false,
         whitelistedDomains: [],
         lastUpdated: new Date().toISOString()
+      },
+      toggleStates: {
+        driveBlock: false,
+        websiteBlock: false,
+        whitelist: false,
+        lastSynced: null
       }
     };
   }
@@ -209,6 +215,39 @@ class DataStore {
       await this.load();
     }
     this.data.developerKey = this.encryptString(newKey);
+    await this.save(this.data);
+  }
+
+  /**
+   * Get toggle states
+   */
+  async getToggleStates() {
+    if (!this.data) {
+      await this.load();
+    }
+    // Ensure toggleStates exists for backward compatibility
+    if (!this.data.toggleStates) {
+      this.data.toggleStates = {
+        driveBlock: false,
+        websiteBlock: false,
+        whitelist: false,
+        lastSynced: null
+      };
+    }
+    return this.data.toggleStates;
+  }
+
+  /**
+   * Update toggle states
+   */
+  async updateToggleStates(toggleStates) {
+    if (!this.data) {
+      await this.load();
+    }
+    this.data.toggleStates = {
+      ...this.data.toggleStates,
+      ...toggleStates
+    };
     await this.save(this.data);
   }
 }

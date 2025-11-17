@@ -189,5 +189,14 @@ contextBridge.exposeInMainWorld('api', {
   // Navigation helper
   loadMainApp: () => {
     return ipcRenderer.invoke('navigation:loadMainApp');
+  },
+  
+  // Policy synchronization and reset
+  syncPolicyStates: () => {
+    return ipcRenderer.invoke('policy:syncPolicyStates');
+  },
+  
+  resetAllPolicies: () => {
+    return ipcRenderer.invoke('policy:resetAllPolicies');
   }
 });
