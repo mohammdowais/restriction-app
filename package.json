@@ -1,0 +1,68 @@
+{
+  "name": "group-policy-manager",
+  "version": "1.0.0",
+  "description": "Group Policy Manager - Electron app for managing Windows Group Policy settings",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:dir": "electron-builder --dir",
+    "pack": "electron-builder --dir"
+  },
+  "keywords": [
+    "electron",
+    "group-policy",
+    "windows",
+    "security"
+  ],
+  "author": "Group Policy Manager Team",
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^5.1.1"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.grouppolicymanager.app",
+    "productName": "Group Policy Manager",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "requireAdministrator",
+      "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Group Policy Manager",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "license": "LICENSE.txt"
+    },
+    "publish": null
+  }
+}

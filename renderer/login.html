@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Group Policy Manager - Login</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <h1>Group Policy Manager</h1>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+        </div>
+        <div id="errorMessage" class="error-message"></div>
+        <button type="submit" class="btn btn-primary">Login</button>
+      </form>
+      <div class="recovery-link">
+        <a href="#" id="passwordRecoveryLink">Forgot Password?</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Recovery Modal -->
+  <div id="passwordRecoveryModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Password Recovery</h2>
+        <span class="close-modal">&times;</span>
+      </div>
+      <div class="modal-body">
+        <!-- Method Selection -->
+        <div id="methodSelection" class="recovery-section">
+          <p>Choose a recovery method:</p>
+          <button class="btn btn-primary recovery-method-btn" data-method="old">Change with Old Password</button>
+          <button class="btn btn-primary recovery-method-btn" data-method="security">Use Security Question</button>
+          <button class="btn btn-primary recovery-method-btn" data-method="developer">Use Developer Key</button>
+        </div>
+
+        <!-- Old Password Method -->
+        <div id="oldPasswordMethod" class="recovery-section hidden">
+          <form id="oldPasswordForm">
+            <div class="form-group">
+              <label for="oldPassword">Current Password</label>
+              <input type="password" id="oldPassword" name="oldPassword" required>
+            </div>
+            <div class="form-group">
+              <label for="newPasswordOld">New Password</label>
+              <input type="password" id="newPasswordOld" name="newPassword" required>
+            </div>
+            <div class="form-group">
+              <label for="confirmPasswordOld">Confirm New Password</label>
+              <input type="password" id="confirmPasswordOld" name="confirmPassword" required>
+            </div>
+            <div id="oldPasswordError" class="error-message"></div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary back-btn">Back</button>
+              <button type="submit" class="btn btn-primary">Change Password</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Security Question Method -->
+        <div id="securityQuestionMethod" class="recovery-section hidden">
+          <form id="securityQuestionForm">
+            <div class="form-group">
+              <label id="securityQuestionLabel">Security Question</label>
+              <input type="text" id="securityAnswer" name="answer" required>
+            </div>
+            <div class="form-group">
+              <label for="newPasswordSecurity">New Password</label>
+              <input type="password" id="newPasswordSecurity" name="newPassword" required>
+            </div>
+            <div class="form-group">
+              <label for="confirmPasswordSecurity">Confirm New Password</label>
+              <input type="password" id="confirmPasswordSecurity" name="confirmPassword" required>
+            </div>
+            <div id="securityQuestionError" class="error-message"></div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary back-btn">Back</button>
+              <button type="submit" class="btn btn-primary">Change Password</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Developer Key Method -->
+        <div id="developerKeyMethod" class="recovery-section hidden">
+          <form id="developerKeyForm">
+            <div class="form-group">
+              <label for="developerKey">Developer Key</label>
+              <input type="text" id="developerKey" name="key" required>
+            </div>
+            <div class="form-group">
+              <label for="newPasswordDev">New Password</label>
+              <input type="password" id="newPasswordDev" name="newPassword" required>
+            </div>
+            <div class="form-group">
+              <label for="confirmPasswordDev">Confirm New Password</label>
+              <input type="password" id="confirmPasswordDev" name="confirmPassword" required>
+            </div>
+            <div id="developerKeyError" class="error-message"></div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary back-btn">Back</button>
+              <button type="submit" class="btn btn-primary">Change Password</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Success Message -->
+        <div id="recoverySuccess" class="recovery-section hidden">
+          <div class="success-message">
+            <p>Password changed successfully!</p>
+            <p>You can now log in with your new password.</p>
+          </div>
+          <button class="btn btn-primary" id="closeSuccessBtn">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts/login.js"></script>
+</body>
+</html>

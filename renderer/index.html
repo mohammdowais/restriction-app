@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Group Policy Manager</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>Group Policy Manager</h1>
+      <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+    </header>
+    
+    <main class="app-main">
+      <section class="control-panel">
+        <h2>External Drive Control</h2>
+        <div class="toggle-container">
+          <label class="toggle-label">Block External Drive Write Access</label>
+          <label class="switch">
+            <input type="checkbox" id="driveBlockToggle">
+            <span class="slider"></span>
+          </label>
+          <span class="status-indicator" id="driveStatus">Disabled</span>
+        </div>
+      </section>
+
+      <section class="control-panel">
+        <h2>Website Control</h2>
+        <div class="toggle-container">
+          <label class="toggle-label">Block All Websites</label>
+          <label class="switch">
+            <input type="checkbox" id="websiteBlockToggle">
+            <span class="slider"></span>
+          </label>
+          <span class="status-indicator" id="websiteStatus">Disabled</span>
+        </div>
+        
+        <div class="toggle-container">
+          <label class="toggle-label">Enable Domain Whitelist</label>
+          <label class="switch">
+            <input type="checkbox" id="whitelistToggle">
+            <span class="slider"></span>
+          </label>
+          <span class="status-indicator" id="whitelistStatus">Disabled</span>
+        </div>
+
+        <div class="domain-management">
+          <h3>Manage Allowed Domains</h3>
+          <div class="domain-input-group">
+            <input type="text" id="domainInput" placeholder="example.com">
+            <button id="addDomainBtn" class="btn btn-primary">Add Domain</button>
+          </div>
+          <ul id="domainList" class="domain-list"></ul>
+        </div>
+      </section>
+
+      <section class="control-panel">
+        <h2>Settings</h2>
+        <button id="changePasswordBtn" class="btn btn-primary">Change Password</button>
+      </section>
+
+      <div id="messageArea" class="message-area"></div>
+    </main>
+  </div>
+  <script src="scripts/renderer.js"></script>
+</body>
+</html>
